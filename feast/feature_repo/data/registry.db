@@ -1,0 +1,27 @@
+
+A
+!
+driver"	driver_idJfeature_repo
+ÍÈ°–€ã÷îÍÈ°–€ã÷î
+C
+#
+__dummy"
+__dummy_idJfeature_repo
+ÍÈ°–¨šıîÍÈ°–¨šıî1"$b2118dc1-1464-455c-99c3-bd0f475368cb*ÍÈ°–¼ï2½
+œ
+driver_hourly_statsfeature_repodriver"
+	conv_rate"
+acc_rate"
+avg_daily_trips2€£:¥event_timestamp*createdZ)'/feature_repo/data/driver_stats.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢'/feature_repo/data/driver_stats.parquet@b
+	driver_id
+ÍÈ°–Øş€ïÍÈ°–Øş€ï:ˆ
+h
+driver_activityfeature_repoG
+driver_hourly_stats
+	conv_rate
+acc_rate
+avg_daily_trips
+ÍÈ°– ·ïÍÈ°– ·ïRx
+v
+,feast.infra.online_stores.sqlite.SqliteTable"F
+"/feature_repo/data/online_store.db feature_repo_driver_hourly_statsb´event_timestamp*createdZ)'/feature_repo/data/driver_stats.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢'/feature_repo/data/driver_stats.parquetªfeature_repo

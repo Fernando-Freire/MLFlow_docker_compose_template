@@ -1,0 +1,97 @@
+version: '3.9'
+
+services:
+    minio:
+        restart: always
+        image: minio/minio:latest
+        container_name: mlflow_s3
+        ports:
+            - "9000:9000"
+            - "9001:9001"
+        command: server /data --console-address ':9001' --address ':9000'
+        environment:
+            - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
+            - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
+        volumes:
+            - minio_data:/data
+
+    mc:
+        image: minio/mc:latest
+        depends_on:
+            - minio
+        container_name: mc
+        env_file:
+            - .env
+        entrypoint: >
+            /bin/sh -c "
+            /tmp/wait-for-it.sh minio:9000;
+            /usr/bin/mc alias set minio http://minio:9000 ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY};
+            /usr/bin/mc mb minio/mlflow;
+            mc mb minio/data;
+            mc cp sample_products.csv minio/data;
+            mc cp test_products.csv minio/data;
+            exit 0;
+            "
+        volumes:
+            - ./wait-for-it.sh:/tmp/wait-for-it.sh
+            - ./sample_products.csv:/sample_products.csv
+            - ./test_products.csv:/test_products.csv
+
+    db:
+        restart: always
+        image: mysql:latest
+        container_name: mlflow_db
+        ports:
+            - "3306:3306"
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        volumes:
+            - dbdata:/var/lib/mysql
+
+    web:
+        restart: always
+        build: ./mlflow
+        image: mlflow_server
+        container_name: mlflow_server
+        ports:
+            - "5000:5000"
+        environment:
+            - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+        command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} --default-artifact-root s3://mlflow/ --host 0.0.0.0
+
+    redis:
+        restart: always
+        image: redis:7.0.2
+        container_name: redis
+        ports:
+            - "6379:6379"
+
+    feast:
+        restart: always
+        build:
+            context: ./feast
+            target: "feast"
+        image: feast_server
+        depends_on:
+            - redis
+        container_name: feast_server
+        ports:
+            - "8888:8888"
+            - "6566:6566"
+        volumes:
+            - ./feast/feature_repo:/feature_repo
+        command: feast ui --host 0.0.0.0 --port 8888
+
+volumes:
+    dbdata:
+    minio_data:
+
+networks:
+  default:
+    name: mlflow
+    external: true
